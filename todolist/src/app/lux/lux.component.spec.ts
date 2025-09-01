@@ -8,9 +8,8 @@ describe('LuxComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [LuxComponent]
-    })
-    .compileComponents();
+      imports: [LuxComponent],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(LuxComponent);
     component = fixture.componentInstance;

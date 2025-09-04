@@ -252,6 +252,7 @@ export class TodoListComponent {
       this.priority.set('medium');
     } catch (e) {
       this.errorMessage.set('Impossible de créer la tâche, réessayez.');
+      console.error(e);
     } finally {
       this.creating.set(false);
     }

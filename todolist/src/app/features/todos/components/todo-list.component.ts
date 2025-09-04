@@ -1,16 +1,72 @@
 // src/app/features/todos/components/todo-list.component.ts
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TodoService } from '../services/todo.service';
 import { PriorityPipe } from '../../../shared/pipes/priority.pipe';
 import { HighlightDirective } from '../../../shared/directives/highlight.directive';
 import { DragDropModule, CdkDragDrop } from '@angular/cdk/drag-drop';
+import { Todo } from '../models/todo.model';
+import { FormsModule } from '@angular/forms';
+import { CreateTodoRequest } from '../models/todo.model';
 
 @Component({
   selector: 'app-todo-list',
   standalone: true,
-  imports: [CommonModule, PriorityPipe, HighlightDirective, DragDropModule],
+  imports: [CommonModule, FormsModule, PriorityPipe, HighlightDirective, DragDropModule],
   template: `
+    <!-- Formulaire de création -->
+    <form class="mb-8 bg-white p-4 rounded-lg shadow flex flex-col gap-3" (ngSubmit)="createTodo()">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Titre *</label>
+          <input
+            type="text"
+            class="w-full border rounded px-3 py-2"
+            [ngModel]="title()"
+            (ngModelChange)="title.set($event)"
+            name="title"
+            required
+            placeholder="Ex: Implémenter l'auth"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+          <input
+            type="text"
+            class="w-full border rounded px-3 py-2"
+            [ngModel]="description()"
+            (ngModelChange)="description.set($event)"
+            name="description"
+            placeholder="Détails (optionnel)"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Priorité</label>
+          <select
+            class="w-full border rounded px-3 py-2"
+            [ngModel]="priority()"
+            (ngModelChange)="priority.set($event)"
+            name="priority"
+          >
+            <option value="low">Faible</option>
+            <option value="medium">Moyenne</option>
+            <option value="high">Haute</option>
+          </select>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <button
+          type="submit"
+          class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+          [disabled]="!title().trim() || creating()"
+        >
+          {{ creating() ? 'Création…' : 'Ajouter la tâche' }}
+        </button>
+        @if (errorMessage()) {
+          <span class="text-sm text-red-600">{{ errorMessage() }}</span>
+        }
+      </div>
+    </form>
     <!-- Dashboard des statistiques -->
     <div class="mb-8">
       <h2 class="text-2xl font-bold text-gray-900 mb-4">Statistiques en temps réel</h2>
@@ -164,11 +220,40 @@ import { DragDropModule, CdkDragDrop } from '@angular/cdk/drag-drop';
 })
 export class TodoListComponent {
   todoService = inject(TodoService);
+  title = signal<string>('');
+  description = signal<string>('');
+  priority = signal<'low' | 'medium' | 'high'>('medium');
+  creating = signal<boolean>(false);
+  errorMessage = signal<string | null>(null);
 
-  async onTodoDropped(event: CdkDragDrop<{ id: number; status: 'todo' | 'in-progress' | 'done' }>, targetStatus: 'todo' | 'in-progress' | 'done') {
+  async onTodoDropped(
+    event: CdkDragDrop<Todo[]>,
+    targetStatus: 'todo' | 'in-progress' | 'done'
+  ) {
     const todo = event.item.data;
     if (todo && todo.status !== targetStatus) {
       await this.todoService.updateTodo(todo.id, { status: targetStatus });
+    }
+  }
+
+  async createTodo() {
+    if (!this.title().trim()) return;
+    this.creating.set(true);
+    this.errorMessage.set(null);
+    try {
+      const payload: CreateTodoRequest = {
+        title: this.title().trim(),
+        description: this.description().trim(),
+        priority: this.priority(),
+      };
+      await this.todoService.createTodo(payload);
+      this.title.set('');
+      this.description.set('');
+      this.priority.set('medium');
+    } catch (e) {
+      this.errorMessage.set('Impossible de créer la tâche, réessayez.');
+    } finally {
+      this.creating.set(false);
     }
   }
 }

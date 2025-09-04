@@ -1,5 +1,5 @@
 // src/app/features/admin/components/admin.components.ts
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule, TitleCasePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -155,13 +155,13 @@ import { DragDropModule, CdkDragDrop } from '@angular/cdk/drag-drop';
             @if (todos().length > 0) {
               <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <!-- À faire -->
-                <div class="bg-gray-50 rounded-lg p-4" cdkDropList [cdkDropListData]="todos().filter(t => t.status === 'todo')" [cdkDropListConnectedTo]="['adminInProgress', 'adminDone']" (cdkDropListDropped)="onAdminTodoDropped($event, 'todo')" id="adminTodo">
+                <div class="bg-gray-50 rounded-lg p-4" cdkDropList [cdkDropListData]="todosTodo()" [cdkDropListConnectedTo]="['adminInProgress', 'adminDone']" (cdkDropListDropped)="onAdminTodoDropped($event, 'todo')" id="adminTodo">
                   <h3 class="text-lg font-semibold text-gray-900 mb-4">
                     À faire
-                    <span class="text-sm text-gray-500">({{ todos().filter(t => t.status === 'todo').length }})</span>
+                    <span class="text-sm text-gray-500">({{ todosTodo().length }})</span>
                   </h3>
                   <div class="space-y-3">
-                    @for (todo of todos().filter(t => t.status === 'todo'); track todo.id) {
+                    @for (todo of todosTodo(); track todo.id) {
                       <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-gray-400" cdkDrag [cdkDragData]="todo">
                         <div class="flex justify-between items-start mb-2">
                           <h4 class="font-medium text-gray-900">{{ todo.title }}</h4>
@@ -173,13 +173,13 @@ import { DragDropModule, CdkDragDrop } from '@angular/cdk/drag-drop';
                 </div>
 
                 <!-- En cours -->
-                <div class="bg-gray-50 rounded-lg p-4" cdkDropList [cdkDropListData]="todos().filter(t => t.status === 'in-progress')" [cdkDropListConnectedTo]="['adminTodo', 'adminDone']" (cdkDropListDropped)="onAdminTodoDropped($event, 'in-progress')" id="adminInProgress">
+                <div class="bg-gray-50 rounded-lg p-4" cdkDropList [cdkDropListData]="todosInProgress()" [cdkDropListConnectedTo]="['adminTodo', 'adminDone']" (cdkDropListDropped)="onAdminTodoDropped($event, 'in-progress')" id="adminInProgress">
                   <h3 class="text-lg font-semibold text-gray-900 mb-4">
                     En cours
-                    <span class="text-sm text-gray-500">({{ todos().filter(t => t.status === 'in-progress').length }})</span>
+                    <span class="text-sm text-gray-500">({{ todosInProgress().length }})</span>
                   </h3>
                   <div class="space-y-3">
-                    @for (todo of todos().filter(t => t.status === 'in-progress'); track todo.id) {
+                    @for (todo of todosInProgress(); track todo.id) {
                       <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-blue-400" cdkDrag [cdkDragData]="todo">
                         <div class="flex justify-between items-start mb-2">
                           <h4 class="font-medium text-gray-900">{{ todo.title }}</h4>
@@ -191,13 +191,13 @@ import { DragDropModule, CdkDragDrop } from '@angular/cdk/drag-drop';
                 </div>
 
                 <!-- Terminé -->
-                <div class="bg-gray-50 rounded-lg p-4" cdkDropList [cdkDropListData]="todos().filter(t => t.status === 'done')" [cdkDropListConnectedTo]="['adminTodo', 'adminInProgress']" (cdkDropListDropped)="onAdminTodoDropped($event, 'done')" id="adminDone">
+                <div class="bg-gray-50 rounded-lg p-4" cdkDropList [cdkDropListData]="todosDone()" [cdkDropListConnectedTo]="['adminTodo', 'adminInProgress']" (cdkDropListDropped)="onAdminTodoDropped($event, 'done')" id="adminDone">
                   <h3 class="text-lg font-semibold text-gray-900 mb-4">
                     Terminé
-                    <span class="text-sm text-gray-500">({{ todos().filter(t => t.status === 'done').length }})</span>
+                    <span class="text-sm text-gray-500">({{ todosDone().length }})</span>
                   </h3>
                   <div class="space-y-3">
-                    @for (todo of todos().filter(t => t.status === 'done'); track todo.id) {
+                    @for (todo of todosDone(); track todo.id) {
                       <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-green-400" cdkDrag [cdkDragData]="todo">
                         <div class="flex justify-between items-start mb-2">
                           <h4 class="font-medium text-gray-900">{{ todo.title }}</h4>
@@ -226,6 +226,9 @@ export class AdminComponent implements OnInit {
   users = signal<User[]>([]);
   todos = signal<Todo[]>([]);
   successMessage = signal<string | null>(null);
+  todosTodo = computed(() => this.todos().filter(t => t.status === 'todo'));
+  todosInProgress = computed(() => this.todos().filter(t => t.status === 'in-progress'));
+  todosDone = computed(() => this.todos().filter(t => t.status === 'done'));
 
   async ngOnInit() {
     // Vérifier que l'utilisateur est admin
@@ -309,8 +312,8 @@ export class AdminComponent implements OnInit {
     setTimeout(() => this.successMessage.set(null), 2500);
   }
 
-  async onAdminTodoDropped(event: CdkDragDrop<{ id: number; title: string; status: 'todo' | 'in-progress' | 'done' }>, targetStatus: 'todo' | 'in-progress' | 'done') {
-    const todo = event.item.data;
+  async onAdminTodoDropped(event: CdkDragDrop<Todo[]>, targetStatus: 'todo' | 'in-progress' | 'done') {
+    const todo = event.item.data as Todo;
     if (todo && todo.status !== targetStatus) {
       await this.todoService.updateTodo(todo.id, { status: targetStatus });
       await this.loadTodos();

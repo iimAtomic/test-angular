@@ -33,6 +33,9 @@ export class AuthService {
   };
 
   constructor() {
+    // Charger les utilisateurs et mots de passe depuis le stockage
+    this.loadUsersFromStorage();
+
     // Vérifier s'il y a un utilisateur en session
     const savedUser = localStorage.getItem('currentUser');
     if (savedUser) {
@@ -72,6 +75,9 @@ export class AuthService {
     this.users.push(newUser);
     this.passwords[userData.email] = userData.password;
 
+    // Persister les changements
+    this.saveUsersToStorage();
+
     // Simuler un délai réseau
     this.setCurrentUser(newUser); // Set the current user after successful registration
     return of(newUser).pipe(delay(500));
@@ -107,19 +113,56 @@ export class AuthService {
     return of(this.users).pipe(delay(300));
   }
 
+  // Mettre à jour le rôle d'un utilisateur et sauvegarder
+  updateUserRole(userId: number, role: 'admin' | 'user'): Observable<User> {
+    const user = this.users.find(u => u.id === userId);
+    if (!user) {
+      return throwError(() => new Error('Utilisateur non trouvé'));
+    }
+
+    user.role = role;
+    this.saveUsersToStorage();
+    return of(user).pipe(delay(300));
+  }
+
   // Méthode pour supprimer un utilisateur (pour l'interface admin)
   deleteUser(userId: number): Observable<void> {
     const index = this.users.findIndex(u => u.id === userId);
     if (index !== -1) {
       this.users.splice(index, 1);
+      this.saveUsersToStorage();
       return of(void 0).pipe(delay(300));
     }
     return throwError(() => new Error('Utilisateur non trouvé'));
   }
 
-  // Save users to localStorage
-  //private saveUserToStorage(): void {
-  //localStorage.setItem('user', JSON.stringify(this.users));
-  //localStorage.setItem('usersPasswords', JSON.stringify(this.passwords));
-  //}
+  // Sauvegarder les utilisateurs et mots de passe dans le stockage
+  private saveUsersToStorage(): void {
+    localStorage.setItem('users', JSON.stringify(this.users));
+    localStorage.setItem('usersPasswords', JSON.stringify(this.passwords));
+  }
+
+  // Charger les utilisateurs et mots de passe depuis le stockage ou garder les valeurs par défaut
+  private loadUsersFromStorage(): void {
+    try {
+      const usersRaw = localStorage.getItem('users');
+      const passwordsRaw = localStorage.getItem('usersPasswords');
+
+      if (usersRaw) {
+        const parsedUsers = JSON.parse(usersRaw) as User[];
+        if (Array.isArray(parsedUsers)) {
+          this.users = parsedUsers;
+        }
+      }
+
+      if (passwordsRaw) {
+        const parsedPw = JSON.parse(passwordsRaw) as Record<string, string>;
+        if (parsedPw && typeof parsedPw === 'object') {
+          this.passwords = parsedPw;
+        }
+      }
+    } catch {
+      // Si parsing échoue, garder les valeurs par défaut
+    }
+  }
 }

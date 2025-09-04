@@ -14,6 +14,15 @@ import { Todo } from '../../todos/models/todo.model';
   imports: [CommonModule, TitleCasePipe],
   template: `
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      @if (successMessage()) {
+        <div class="mb-4 rounded-md bg-green-50 p-4">
+          <div class="flex">
+            <div class="ml-3">
+              <p class="text-sm font-medium text-green-800">{{ successMessage() }}</p>
+            </div>
+          </div>
+        </div>
+      }
       <div class="mb-8">
         <h1 class="text-3xl font-bold text-gray-900">Interface d'Administration</h1>
         <p class="text-gray-600 mt-2">Gérez les utilisateurs et les tickets</p>
@@ -101,8 +110,14 @@ import { Todo } from '../../todos/models/todo.model';
                             {{ user.role | titlecase }}
                           </span>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-3">
                           @if (user.role !== 'admin') {
+                            <button
+                              (click)="promoteToAdmin(user)"
+                              class="text-blue-600 hover:text-blue-900"
+                            >
+                              Promouvoir Admin
+                            </button>
                             <button
                               (click)="deleteUser(user.id)"
                               class="text-red-600 hover:text-red-900"
@@ -110,7 +125,12 @@ import { Todo } from '../../todos/models/todo.model';
                               Supprimer
                             </button>
                           } @else {
-                            <span class="text-gray-400">Admin protégé</span>
+                            <button
+                              (click)="demoteToUser(user)"
+                              class="text-yellow-600 hover:text-yellow-900"
+                            >
+                              Rétrograder User
+                            </button>
                           }
                         </td>
                       </tr>
@@ -237,6 +257,7 @@ export class AdminComponent implements OnInit {
   activeTab = signal<'users' | 'tickets'>('users');
   users = signal<User[]>([]);
   todos = signal<Todo[]>([]);
+  successMessage = signal<string | null>(null);
 
   async ngOnInit() {
     // Vérifier que l'utilisateur est admin
@@ -280,6 +301,26 @@ export class AdminComponent implements OnInit {
     }
   }
 
+  async promoteToAdmin(user: User) {
+    try {
+      await firstValueFrom(this.authService.updateUserRole(user.id, 'admin'));
+      await this.loadUsers();
+      this.showSuccess(`L'utilisateur ${user.name} a été promu admin.`);
+    } catch (error) {
+      console.error('Erreur lors de la promotion:', error);
+    }
+  }
+
+  async demoteToUser(user: User) {
+    try {
+      await firstValueFrom(this.authService.updateUserRole(user.id, 'user'));
+      await this.loadUsers();
+      this.showSuccess(`L'utilisateur ${user.name} a été rétrogradé utilisateur.`);
+    } catch (error) {
+      console.error('Erreur lors de la rétrogradation:', error);
+    }
+  }
+
   async deleteTodo(todoId: number) {
     if (confirm('Êtes-vous sûr de vouloir supprimer ce ticket ?')) {
       try {
@@ -293,5 +334,10 @@ export class AdminComponent implements OnInit {
 
   assignTodo(todo: Todo) {
     console.warn('Assigner le ticket:', todo);
+  }
+
+  private showSuccess(message: string) {
+    this.successMessage.set(message);
+    setTimeout(() => this.successMessage.set(null), 2500);
   }
 }

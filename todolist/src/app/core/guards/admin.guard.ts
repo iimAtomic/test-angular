@@ -5,7 +5,6 @@ import { AuthService } from '../../features/auth/services/auth.service';
 import { map, take } from 'rxjs/operators';
 import { toObservable } from '@angular/core/rxjs-interop';
 
-
 export const adminGuard: CanActivateFn = () => {
   const authService = inject(AuthService);
   const router = inject(Router);
@@ -17,7 +16,7 @@ export const adminGuard: CanActivateFn = () => {
         return true; // Accès admin autorisé
       } else {
         // Rediriger vers la page d'accueil
-        router.navigate(['/todos']);
+        router.navigate(['/auth/login']);
         return false; // Accès refusé
       }
     })

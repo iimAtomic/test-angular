@@ -212,7 +212,7 @@ export class TodoListComponent implements OnInit {
         this.newTodo.title = '';
         this.newTodo.description = '';
       } catch (error) {
-        console.error('Erreur lors de l\'ajout du todo:', error);
+        console.error("Erreur lors de l'ajout du todo:", error);
       } finally {
         this.addingTodo.set(false);
       }
@@ -239,6 +239,6 @@ export class TodoListComponent implements OnInit {
 
   // Méthodes utilitaires
   getTodosByStatus(status: Todo['status']): Todo[] {
-    return this.todos().filter((todo) => todo.status === status);
+    return this.todos().filter(todo => todo.status === status);
   }
 }

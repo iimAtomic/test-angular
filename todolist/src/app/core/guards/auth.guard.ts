@@ -5,7 +5,6 @@ import { AuthService } from '../../features/auth/services/auth.service';
 import { map, take } from 'rxjs/operators';
 import { toObservable } from '@angular/core/rxjs-interop';
 
-
 export const authGuard: CanActivateFn = (route, state) => {
   const authService = inject(AuthService);
   const router = inject(Router);
@@ -18,7 +17,7 @@ export const authGuard: CanActivateFn = (route, state) => {
       } else {
         // Rediriger vers login avec l'URL de retour
         router.navigate(['/auth/login'], {
-          queryParams: { returnUrl: state.url }
+          queryParams: { returnUrl: state.url },
         });
         return false; // Accès refusé
       }

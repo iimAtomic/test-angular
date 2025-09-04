@@ -10,7 +10,7 @@ import { ErrorService } from '../../services/error.service';
   template: `
     <div class="fixed top-4 right-4 z-50 space-y-2">
       @for (notification of errorService.errors$(); track notification.id) {
-        <div 
+        <div
           class="w-fit max-w-md p-4 rounded-lg shadow-lg text-white flex items-center justify-between"
           [class]="{
             'bg-red-500': notification.type === 'error',
@@ -37,7 +37,7 @@ import { ErrorService } from '../../services/error.service';
             }
             <span>{{ notification.message }}</span>
           </div>
-          <button 
+          <button
             (click)="errorService.removeError(notification.id)"
             class="ml-4 text-white hover:text-gray-200"
           >

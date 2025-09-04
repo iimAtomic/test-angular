@@ -7,11 +7,12 @@ import { AuthService } from '../../auth/services/auth.service';
 import { TodoService } from '../../todos/services/todo.service';
 import { User } from '../../auth/models/user.model';
 import { Todo } from '../../todos/models/todo.model';
+import { DragDropModule, CdkDragDrop } from '@angular/cdk/drag-drop';
 
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [CommonModule, TitleCasePipe],
+  imports: [CommonModule, TitleCasePipe, DragDropModule],
   template: `
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       @if (successMessage()) {
@@ -152,93 +153,60 @@ import { Todo } from '../../todos/models/todo.model';
           </div>
           <div class="p-6">
             @if (todos().length > 0) {
-              <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                  <thead class="bg-gray-50">
-                    <tr>
-                      <th
-                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                      >
-                        Ticket
-                      </th>
-                      <th
-                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                      >
-                        Statut
-                      </th>
-                      <th
-                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                      >
-                        Priorité
-                      </th>
-                      <th
-                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                      >
-                        Assigné à
-                      </th>
-                      <th
-                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                      >
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody class="bg-white divide-y divide-gray-200">
-                    @for (todo of todos(); track todo.id) {
-                      <tr>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                          <div class="text-sm font-medium text-gray-900">{{ todo.title }}</div>
-                          @if (todo.description) {
-                            <div class="text-sm text-gray-500">{{ todo.description }}</div>
-                          }
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                          <span
-                            [class.bg-yellow-100]="todo.status === 'todo'"
-                            [class.text-yellow-800]="todo.status === 'todo'"
-                            [class.bg-blue-100]="todo.status === 'in-progress'"
-                            [class.text-blue-800]="todo.status === 'in-progress'"
-                            [class.bg-green-100]="todo.status === 'done'"
-                            [class.text-green-800]="todo.status === 'done'"
-                            class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
-                          >
-                            {{ todo.status | titlecase }}
-                          </span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                          <span
-                            [class.bg-red-100]="todo.priority === 'high'"
-                            [class.text-red-800]="todo.priority === 'high'"
-                            [class.bg-yellow-100]="todo.priority === 'medium'"
-                            [class.text-yellow-800]="todo.priority === 'medium'"
-                            [class.bg-green-100]="todo.priority === 'low'"
-                            [class.text-green-800]="todo.priority === 'low'"
-                            class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
-                          >
-                            {{ todo.priority | titlecase }}
-                          </span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {{ todo.assignedTo || 'Non assigné' }}
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <button
-                            (click)="deleteTodo(todo.id)"
-                            class="text-red-600 hover:text-red-900 mr-3"
-                          >
-                            Supprimer
-                          </button>
-                          <button
-                            (click)="assignTodo(todo)"
-                            class="text-blue-600 hover:text-blue-900"
-                          >
-                            Assigner
-                          </button>
-                        </td>
-                      </tr>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- À faire -->
+                <div class="bg-gray-50 rounded-lg p-4" cdkDropList [cdkDropListData]="todos().filter(t => t.status === 'todo')" [cdkDropListConnectedTo]="['adminInProgress', 'adminDone']" (cdkDropListDropped)="onAdminTodoDropped($event, 'todo')" id="adminTodo">
+                  <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    À faire
+                    <span class="text-sm text-gray-500">({{ todos().filter(t => t.status === 'todo').length }})</span>
+                  </h3>
+                  <div class="space-y-3">
+                    @for (todo of todos().filter(t => t.status === 'todo'); track todo.id) {
+                      <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-gray-400" cdkDrag [cdkDragData]="todo">
+                        <div class="flex justify-between items-start mb-2">
+                          <h4 class="font-medium text-gray-900">{{ todo.title }}</h4>
+                        </div>
+                        @if (todo.description) {<p class="text-sm text-gray-600 mb-3">{{ todo.description }}</p>}
+                      </div>
                     }
-                  </tbody>
-                </table>
+                  </div>
+                </div>
+
+                <!-- En cours -->
+                <div class="bg-gray-50 rounded-lg p-4" cdkDropList [cdkDropListData]="todos().filter(t => t.status === 'in-progress')" [cdkDropListConnectedTo]="['adminTodo', 'adminDone']" (cdkDropListDropped)="onAdminTodoDropped($event, 'in-progress')" id="adminInProgress">
+                  <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    En cours
+                    <span class="text-sm text-gray-500">({{ todos().filter(t => t.status === 'in-progress').length }})</span>
+                  </h3>
+                  <div class="space-y-3">
+                    @for (todo of todos().filter(t => t.status === 'in-progress'); track todo.id) {
+                      <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-blue-400" cdkDrag [cdkDragData]="todo">
+                        <div class="flex justify-between items-start mb-2">
+                          <h4 class="font-medium text-gray-900">{{ todo.title }}</h4>
+                        </div>
+                        @if (todo.description) {<p class="text-sm text-gray-600 mb-3">{{ todo.description }}</p>}
+                      </div>
+                    }
+                  </div>
+                </div>
+
+                <!-- Terminé -->
+                <div class="bg-gray-50 rounded-lg p-4" cdkDropList [cdkDropListData]="todos().filter(t => t.status === 'done')" [cdkDropListConnectedTo]="['adminTodo', 'adminInProgress']" (cdkDropListDropped)="onAdminTodoDropped($event, 'done')" id="adminDone">
+                  <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    Terminé
+                    <span class="text-sm text-gray-500">({{ todos().filter(t => t.status === 'done').length }})</span>
+                  </h3>
+                  <div class="space-y-3">
+                    @for (todo of todos().filter(t => t.status === 'done'); track todo.id) {
+                      <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-green-400" cdkDrag [cdkDragData]="todo">
+                        <div class="flex justify-between items-start mb-2">
+                          <h4 class="font-medium text-gray-900">{{ todo.title }}</h4>
+                        </div>
+                        @if (todo.description) {<p class="text-sm text-gray-600 mb-3">{{ todo.description }}</p>}
+                      </div>
+                    }
+                  </div>
+                </div>
               </div>
             } @else {
               <p class="text-gray-500 text-center py-8">Aucun ticket trouvé</p>
@@ -339,5 +307,14 @@ export class AdminComponent implements OnInit {
   private showSuccess(message: string) {
     this.successMessage.set(message);
     setTimeout(() => this.successMessage.set(null), 2500);
+  }
+
+  async onAdminTodoDropped(event: CdkDragDrop<{ id: number; title: string; status: 'todo' | 'in-progress' | 'done' }>, targetStatus: 'todo' | 'in-progress' | 'done') {
+    const todo = event.item.data;
+    if (todo && todo.status !== targetStatus) {
+      await this.todoService.updateTodo(todo.id, { status: targetStatus });
+      await this.loadTodos();
+      this.showSuccess(`Le ticket "${todo.title}" est passé à "${targetStatus}".`);
+    }
   }
 }

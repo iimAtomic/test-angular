@@ -27,7 +27,7 @@ describe('HighlightDirective', () => {
   it('should apply highlight color', () => {
     component.color = 'red';
     fixture.detectChanges();
-    
+
     const element = fixture.nativeElement.querySelector('div');
     expect(element.style.backgroundColor).toBe('red');
   });

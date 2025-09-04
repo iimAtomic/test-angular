@@ -25,6 +25,6 @@ describe('PriorityPipe', () => {
   });
 
   it('should return original value for unknown priority', () => {
-    expect(pipe.transform('unknown' as any)).toBe('unknown');
+    expect((pipe.transform as unknown as (v: any) => string)('unknown')).toBe('unknown');
   });
 });

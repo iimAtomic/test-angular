@@ -192,7 +192,7 @@ export class RegisterComponent {
     const field = this.registerForm.get(fieldName);
     if (field?.errors) {
       if (field.errors['required']) return 'Ce champ est requis';
-      if (field.errors['email']) return "Format d'email invalide";
+      if (field.errors['email']) return 'Format d\'email invalide';
       if (field.errors['minlength'])
         return `Minimum ${field.errors['minlength'].requiredLength} caractères`;
       if (field.errors['passwordMismatch']) return 'Les mots de passe ne correspondent pas';

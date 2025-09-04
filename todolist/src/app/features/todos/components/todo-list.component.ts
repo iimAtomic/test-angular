@@ -4,11 +4,12 @@ import { CommonModule } from '@angular/common';
 import { TodoService } from '../services/todo.service';
 import { PriorityPipe } from '../../../shared/pipes/priority.pipe';
 import { HighlightDirective } from '../../../shared/directives/highlight.directive';
+import { DragDropModule, CdkDragDrop } from '@angular/cdk/drag-drop';
 
 @Component({
   selector: 'app-todo-list',
   standalone: true,
-  imports: [CommonModule, PriorityPipe, HighlightDirective],
+  imports: [CommonModule, PriorityPipe, HighlightDirective, DragDropModule],
   template: `
     <!-- Dashboard des statistiques -->
     <div class="mb-8">
@@ -40,21 +41,23 @@ import { HighlightDirective } from '../../../shared/directives/highlight.directi
     <!-- Colonnes Kanban -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
       <!-- À faire -->
-      <div class="bg-gray-50 rounded-lg p-4">
+      <div class="bg-gray-50 rounded-lg p-4" cdkDropList [cdkDropListData]="todoService.pendingTodos()" [cdkDropListConnectedTo]="['inProgressList', 'doneList']" (cdkDropListDropped)="onTodoDropped($event, 'todo')" id="todoList">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">
           À faire
           <span class="text-sm text-gray-500">({{ todoService.pendingTodos().length }})</span>
         </h3>
         <div class="space-y-3">
           @for (todo of todoService.pendingTodos(); track todo.id) {
-            <div 
+            <div
               class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-gray-400"
+              cdkDrag
+              [cdkDragData]="todo"
               [appHighlight]="todo.priority === 'high' ? 'rgba(239, 68, 68, 0.1)' : 'transparent'"
               [appHighlightDelay]="todo.priority === 'high' ? 500 : 0"
             >
               <div class="flex justify-between items-start mb-2">
                 <h4 class="font-medium text-gray-900">{{ todo.title }}</h4>
-                <span 
+                <span
                   class="px-2 py-1 text-xs font-semibold rounded-full"
                   [class.bg-red-100]="todo.priority === 'high'"
                   [class.text-red-800]="todo.priority === 'high'"
@@ -78,21 +81,23 @@ import { HighlightDirective } from '../../../shared/directives/highlight.directi
       </div>
 
       <!-- En cours -->
-      <div class="bg-gray-50 rounded-lg p-4">
+      <div class="bg-gray-50 rounded-lg p-4" cdkDropList [cdkDropListData]="todoService.inProgressTodos()" [cdkDropListConnectedTo]="['todoList', 'doneList']" (cdkDropListDropped)="onTodoDropped($event, 'in-progress')" id="inProgressList">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">
           En cours
           <span class="text-sm text-gray-500">({{ todoService.inProgressTodos().length }})</span>
         </h3>
         <div class="space-y-3">
           @for (todo of todoService.inProgressTodos(); track todo.id) {
-            <div 
+            <div
               class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-blue-400"
+              cdkDrag
+              [cdkDragData]="todo"
               [appHighlight]="todo.priority === 'high' ? 'rgba(239, 68, 68, 0.1)' : 'transparent'"
               [appHighlightDelay]="todo.priority === 'high' ? 500 : 0"
             >
               <div class="flex justify-between items-start mb-2">
                 <h4 class="font-medium text-gray-900">{{ todo.title }}</h4>
-                <span 
+                <span
                   class="px-2 py-1 text-xs font-semibold rounded-full"
                   [class.bg-red-100]="todo.priority === 'high'"
                   [class.text-red-800]="todo.priority === 'high'"
@@ -116,21 +121,23 @@ import { HighlightDirective } from '../../../shared/directives/highlight.directi
       </div>
 
       <!-- Terminé -->
-      <div class="bg-gray-50 rounded-lg p-4">
+      <div class="bg-gray-50 rounded-lg p-4" cdkDropList [cdkDropListData]="todoService.completedTodos()" [cdkDropListConnectedTo]="['todoList', 'inProgressList']" (cdkDropListDropped)="onTodoDropped($event, 'done')" id="doneList">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">
           Terminé
           <span class="text-sm text-gray-500">({{ todoService.completedTodos().length }})</span>
         </h3>
         <div class="space-y-3">
           @for (todo of todoService.completedTodos(); track todo.id) {
-            <div 
+            <div
               class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-green-400"
+              cdkDrag
+              [cdkDragData]="todo"
               [appHighlight]="todo.priority === 'high' ? 'rgba(34, 197, 94, 0.1)' : 'transparent'"
               [appHighlightDelay]="todo.priority === 'high' ? 500 : 0"
             >
               <div class="flex justify-between items-start mb-2">
                 <h4 class="font-medium text-gray-900 line-through">{{ todo.title }}</h4>
-                <span 
+                <span
                   class="px-2 py-1 text-xs font-semibold rounded-full"
                   [class.bg-red-100]="todo.priority === 'high'"
                   [class.text-red-800]="todo.priority === 'high'"
@@ -157,4 +164,11 @@ import { HighlightDirective } from '../../../shared/directives/highlight.directi
 })
 export class TodoListComponent {
   todoService = inject(TodoService);
+
+  async onTodoDropped(event: CdkDragDrop<{ id: number; status: 'todo' | 'in-progress' | 'done' }>, targetStatus: 'todo' | 'in-progress' | 'done') {
+    const todo = event.item.data;
+    if (todo && todo.status !== targetStatus) {
+      await this.todoService.updateTodo(todo.id, { status: targetStatus });
+    }
+  }
 }

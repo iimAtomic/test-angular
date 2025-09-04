@@ -12,7 +12,7 @@ export class PriorityPipe implements PipeTransform {
       medium: 'Moyenne',
       high: 'Haute'
     };
-    
+
     return priorityMap[priority] || priority;
   }
 }

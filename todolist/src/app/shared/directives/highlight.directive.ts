@@ -1,18 +1,16 @@
 // src/app/shared/directives/highlight.directive.ts
-import { Directive, ElementRef, Input, OnInit, Renderer2 } from '@angular/core';
+import { Directive, ElementRef, Input, OnInit, Renderer2, inject } from '@angular/core';
 
 @Directive({
   selector: '[appHighlight]',
   standalone: true
 })
 export class HighlightDirective implements OnInit {
-  @Input() appHighlight: string = 'yellow';
-  @Input() appHighlightDelay: number = 0;
+  @Input() appHighlight = 'yellow';
+  @Input() appHighlightDelay = 0;
 
-  constructor(
-    private el: ElementRef,
-    private renderer: Renderer2
-  ) {}
+  private el = inject(ElementRef);
+  private renderer = inject(Renderer2);
 
   ngOnInit() {
     setTimeout(() => {

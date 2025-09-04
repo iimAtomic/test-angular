@@ -9,7 +9,7 @@ export class TodoService {
     {
       id: 1,
       title: 'Apprendre Angular',
-      description: "Étudier les fondamentaux d'Angular 20+",
+      description: 'Étudier les fondamentaux d\'Angular 20+',
       status: 'todo',
       priority: 'high',
       createdBy: 1,
@@ -28,7 +28,7 @@ export class TodoService {
     },
     {
       id: 3,
-      title: "Configurer l'environnement",
+      title: 'Configurer l\'environnement',
       description: 'Installer Node.js, Angular CLI et configurer VS Code',
       status: 'done',
       priority: 'high',
@@ -43,37 +43,37 @@ export class TodoService {
     effect(() => {
       const todos = this.todos();
       console.warn(`Todos mis à jour: ${todos.length} todos`);
-      
+
       // Sauvegarder dans localStorage
       localStorage.setItem('todos', JSON.stringify(todos));
     });
   }
 
   // Signal computed - se recalcule automatiquement
-  public completedTodos = computed(() => 
+  public completedTodos = computed(() =>
     this.todos().filter(todo => todo.status === 'done')
   );
-  
-  public pendingTodos = computed(() => 
+
+  public pendingTodos = computed(() =>
     this.todos().filter(todo => todo.status === 'todo')
   );
 
-  public inProgressTodos = computed(() => 
+  public inProgressTodos = computed(() =>
     this.todos().filter(todo => todo.status === 'in-progress')
   );
-  
-  public highPriorityTodos = computed(() => 
+
+  public highPriorityTodos = computed(() =>
     this.todos().filter(todo => todo.priority === 'high')
   );
-  
+
   public todoStats = computed(() => ({
     total: this.todos().length,
     completed: this.completedTodos().length,
     inProgress: this.inProgressTodos().length,
     pending: this.pendingTodos().length,
     highPriority: this.highPriorityTodos().length,
-    completionRate: this.todos().length > 0 
-      ? (this.completedTodos().length / this.todos().length) * 100 
+    completionRate: this.todos().length > 0
+      ? (this.completedTodos().length / this.todos().length) * 100
       : 0
   }));
 
@@ -102,7 +102,7 @@ export class TodoService {
 
   // POST - Créer un nouveau todo
   async createTodo(todoData: CreateTodoRequest): Promise<Todo> {
-    console.warn("🔄 Service: Création d'un nouveau todo...", todoData);
+    console.warn('🔄 Service: Création d\'un nouveau todo...', todoData);
     await this.delay(400);
 
     const newTodo: Todo = {
